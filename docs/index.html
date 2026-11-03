@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twenty years of KTX</title>
+<meta name="description" content="Explore twenty years of Korean high-speed rail and metro rail in KORAIL open data: stations, events and the shape of the day.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+:root {
+  --bg: #0e1613;
+  --panel: #16211d;
+  --panel-2: #1c2a25;
+  --line: #2a3a34;
+  --ink: #e8eeeb;
+  --muted: #9aaba3;
+  --head: #6cc3a0;
+  --track: #3d5a4e;
+  --ktx: #3987e5;
+  --srt: #d95926;
+  --metro: #199e70;
+  --grey: #7d8a84;
+  --sans: "Archivo", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+body { font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 40px; }
+header h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; color: var(--ink); font-weight: 700; }
+header h1 span { color: var(--head); }
+header p { margin: 0 0 10px; color: var(--muted); max-width: 760px; }
+.links { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; margin-bottom: 18px; }
+.links a { color: var(--head); text-decoration: none; border-bottom: 1px solid var(--track); }
+.links a:hover { border-bottom-color: var(--head); }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.tab { background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; font: 600 14px var(--sans); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--head); color: #0b1310; border-color: var(--head); }
+.view { display: none; }
+.view.on { display: block; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.panel h2 { font-size: 17px; margin: 0 0 4px; }
+.panel .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; }
+label { color: var(--muted); font-size: 13px; }
+select { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 15px var(--sans); min-width: 240px; max-width: 100%; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.tile { background: var(--panel-2); border-radius: 10px; padding: 10px 12px; }
+.tile .k { color: var(--muted); font-size: 12px; }
+.tile .v { font-size: 22px; font-weight: 700; margin-top: 2px; }
+.tile .n { color: var(--muted); font-size: 12px; }
+.chart { width: 100%; height: 340px; }
+.chart.tall { height: 420px; }
+.note { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; }
+.datanote { background: transparent; border: 1px dashed var(--line); }
+.datanote h2 { font-size: 15px; }
+.datanote ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+footer { color: var(--muted); font-size: 12px; margin-top: 18px; }
+footer a { color: var(--muted); }
+@media (max-width: 640px) {
+  header h1 { font-size: 22px; }
+  .tiles { gap: 6px; }
+  .tile { padding: 8px; }
+  .tile .k, .tile .n { font-size: 11px; }
+  .tile .v { font-size: 17px; }
+  .chart { height: 300px; }
+  .chart.tall { height: 380px; }
+  select { min-width: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Twenty years of <span>KTX</span>: who rides where, and when</h1>
+  <p>Korean high-speed rail and KORAIL metro rail in open data, 2004 to 2025. Pick a station, follow the events that shaped the network, or see when metro rail riders travel.</p>
+  <div class="links">
+    <a href="case-study.html">Read the case study</a>
+    <a href="https://github.com/likrentai/koreanrail">Code and data notes on GitHub</a>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-view="stations" aria-selected="true">Stations</button>
+  <button class="tab" role="tab" data-view="timeline" aria-selected="false">Timeline</button>
+  <button class="tab" role="tab" data-view="metro" aria-selected="false">Metro day</button>
+</nav>
+
+<section class="view on" id="view-stations">
+  <div class="panel">
+    <h2>Station explorer</h2>
+    <p class="sub">KTX and SRT riders at one station: boardings plus alightings.</p>
+    <div class="controls">
+      <label for="station">Station</label>
+      <select id="station"></select>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="k" id="t1k">Riders</div><div class="v" id="t1v">-</div><div class="n" id="t1n"></div></div>
+      <div class="tile"><div class="k">Against 2019</div><div class="v" id="t2v">-</div><div class="n">KTX plus SRT</div></div>
+      <div class="tile"><div class="k">SRT share</div><div class="v" id="t3v">-</div><div class="n" id="t3n"></div></div>
+    </div>
+    <div class="chart" id="st-year"></div>
+    <div class="chart" id="st-month"></div>
+    <p class="note" id="st-note"></p>
+  </div>
+</section>
+
+<section class="view" id="view-timeline">
+  <div class="panel">
+    <h2>Twenty years of high-speed rail</h2>
+    <p class="sub">KTX and SRT boardings each year, millions, with the events that shaped them.</p>
+    <div class="chart tall" id="tl-year"></div>
+    <p class="note" id="tl-events"></p>
+  </div>
+  <div class="panel">
+    <h2>Month by month, 2016 to 2023</h2>
+    <p class="sub">KTX and SRT boardings each month, millions: SRT's arrival, COVID and the recovery.</p>
+    <div class="chart" id="tl-month"></div>
+  </div>
+</section>
+
+<section class="view" id="view-metro">
+  <div class="panel">
+    <h2>The metro rail day</h2>
+    <p class="sub" id="md-sub">Share of the day's gate taps in each hour.</p>
+    <div class="controls">
+      <label for="line">Line</label>
+      <select id="line"></select>
+    </div>
+    <div class="chart" id="md-day"></div>
+    <p class="note">The grey dashed lines show all metro rail for comparison. "&lt;07" is before 07:00; "24+" is after midnight.</p>
+  </div>
+  <div class="panel">
+    <h2>Which lines are most commuter-heavy?</h2>
+    <p class="sub">Share of each line's boardings in the 07 and 08 hours. Tap a bar to show that line above.</p>
+    <div class="chart tall" id="md-rank"></div>
+  </div>
+</section>
+
+<section class="panel datanote">
+  <h2>About the data</h2>
+  <ul>
+    <li>Source: Korea Railroad Corporation (KORAIL) open data, from data.go.kr, the Korean Railway Statistics portal (railstat.korail.com) and KORAIL's metro rail statistics (info.korail.com).</li>
+    <li>Monthly station figures (2004 to 2022) cover 50 KTX stations; stations with fewer than 500 riders in a month show as 0. Yearly figures (2016 to 2024) cover all KTX and SRT stations.</li>
+    <li>Seoul station's yearly figures include Gangneung line KTX riders; the monthly ones do not, so the two differ by 7 to 10% from 2018.</li>
+    <li>Metro hours are gate taps, all days of 2025 together (weekdays and weekends are not separated). They show the shape of the day, not exact station totals.</li>
+  </ul>
+</section>
+
+<footer>
+  Lik Ren Tai, November 2026. Independent project, not affiliated with KORAIL or SR.
+</footer>
+</div>
+
+<script>
+// SETTINGS
+const DATA_DIR = "data/";  // <- folder with the JSON files
+const DEFAULT_STATION = "부산";  // <- station shown first
+const DEFAULT_LINE = "중앙선";  // <- metro line shown first
+const COMPARE_YEAR = 2019;  // <- base year for the "against" tile
+const C_KTX = "#3987e5";  // <- VISUAL: KTX blue
+const C_SRT = "#d95926";  // <- VISUAL: SRT orange
+const C_METRO = "#199e70";  // <- VISUAL: metro aqua
+const C_GREY = "#7d8a84";  // <- VISUAL: comparison lines
+const C_HEAD = "#6cc3a0";  // <- VISUAL: theme green (light, for the dark page)
+const C_TEXT = "#9aaba3";  // <- VISUAL: axis text
+const C_TITLE = "#e8eeeb";  // <- VISUAL: chart titles
+const C_GRID = "#24332d";  // <- VISUAL: grid lines
+const C_EVENT = "#5d756a";  // <- VISUAL: event lines
+const C_BAR_DIM = "#3b4f47";  // <- VISUAL: unselected bars
+const C_PANEL = "#16211d";  // <- VISUAL: panel colour, behind event labels
+const NARROW_PX = 640;  // <- screens narrower than this get the phone layout
+const EVENT_LEVELS = 3;  // <- VISUAL: event labels are spread over this many heights
+
+const FONT = getComputedStyle(document.documentElement).getPropertyValue("--sans");
+const CONFIG = { displayModeBar: false, responsive: true };
+const NONE = "rgba(0,0,0,0)";
+
+let ST = null;
+let TL = null;
+let MD = null;
+
+function narrow() {
+  return window.innerWidth < NARROW_PX;
+}
+
+function label(ko, en) {
+  return ko === en ? ko : ko + " (" + en + ")";
+}
+
+function fmtK(v) {
+  if (v === null || v === undefined) {
+    return "-";
+  }
+  if (v >= 1000) {
+    return (v / 1000).toFixed(1) + " m";
+  }
+  return Math.round(v) + " k";
+}
+
+function fmtPct(v) {
+  const sign = v >= 0 ? "+" : "";
+  return sign + v.toFixed(0) + "%";
+}
+
+function chartTitle(text) {
+  return { text: text, font: { size: 13, color: C_TITLE }, x: 0, xanchor: "left" };
+}
+
+function baseLayout(extra) {
+  const layout = {};
+  layout.paper_bgcolor = NONE;
+  layout.plot_bgcolor = NONE;
+  layout.font = { family: FONT, color: C_TEXT, size: 12 };
+  layout.margin = { l: 52, r: 16, t: 28, b: 40 };
+  layout.xaxis = { gridcolor: C_GRID, zeroline: false, linecolor: C_GRID };
+  layout.yaxis = { gridcolor: C_GRID, zeroline: false, linecolor: C_GRID };
+  layout.legend = { orientation: "h", x: 0, y: 1.12, font: { size: 12 }, traceorder: "normal" };
+  layout.hoverlabel = { font: { family: FONT } };
+  layout.bargap = 0.25;
+  return Object.assign(layout, extra || {});
+}
+
+function eventLine(x, top) {
+  return { type: "line", x0: x, x1: x, yref: "paper", y0: 0, y1: top, line: { color: C_EVENT, width: 1, dash: "dot" } };
+}
+
+// ---------- tabs ----------
+function showView(name) {
+  for (const b of document.querySelectorAll(".tab")) {
+    b.setAttribute("aria-selected", b.dataset.view === name ? "true" : "false");
+  }
+  for (const v of document.querySelectorAll(".view")) {
+    v.classList.toggle("on", v.id === "view-" + name);
+  }
+  window.dispatchEvent(new Event("resize"));
+}
+
+for (const b of document.querySelectorAll(".tab")) {
+  b.addEventListener("click", () => showView(b.dataset.view));
+}
+
+// ---------- stations ----------
+function yearlySeries(s) {
+  const out = { years: [], ktx: [], srt: [] };
+  const firstPortal = ST.years[0];
+  if (s.monthly) {
+    for (let y = 2004; y < firstPortal; y++) {
+      let sum = 0;
+      for (let i = 0; i < ST.months.length; i++) {
+        if (ST.months[i].startsWith(String(y))) {
+          sum += s.monthly[i] || 0;
+        }
+      }
+      out.years.push(y);
+      out.ktx.push(sum);
+      out.srt.push(0);
+    }
+  }
+  for (let i = 0; i < ST.years.length; i++) {
+    out.years.push(ST.years[i]);
+    out.ktx.push(s.ktx ? s.ktx[i] || 0 : 0);
+    out.srt.push(s.srt ? s.srt[i] || 0 : 0);
+  }
+  return out;
+}
+
+function drawTiles(ys) {
+  const last = ys.years.length - 1;
+  const lastYear = ys.years[last];
+  const total = ys.ktx[last] + ys.srt[last];
+  const iBase = ys.years.indexOf(COMPARE_YEAR);
+  const base = iBase >= 0 ? ys.ktx[iBase] + ys.srt[iBase] : 0;
+  document.getElementById("t1k").textContent = "Riders " + lastYear;
+  document.getElementById("t1v").textContent = fmtK(total);
+  document.getElementById("t1n").textContent = "KTX plus SRT";
+  document.getElementById("t2v").textContent = base > 0 ? fmtPct((total / base - 1) * 100) : "new";
+  document.getElementById("t3v").textContent = total > 0 ? (ys.srt[last] / total * 100).toFixed(0) + "%" : "-";
+  document.getElementById("t3n").textContent = "of riders in " + lastYear;
+}
+
+function drawStation(ko) {
+  const s = ST.stations.find((d) => d.ko === ko);
+  const ys = yearlySeries(s);
+  const firstPortal = ST.years[0];
+  drawTiles(ys);
+
+  const hoverK = "%{x}: %{y:,.0f} thousand<extra>%{fullData.name}</extra>";
+  const traces = [];
+  traces.push({ type: "bar", name: "KTX", x: ys.years, y: ys.ktx, marker: { color: C_KTX }, hovertemplate: hoverK });
+  traces.push({ type: "bar", name: "SRT", x: ys.years, y: ys.srt, marker: { color: C_SRT }, hovertemplate: hoverK });
+  const shapes = [];
+  const notes = [];
+  if (s.monthly) {
+    shapes.push(eventLine(firstPortal - 0.5, 1));
+    notes.push({ x: firstPortal - 0.5, y: 1.02, yref: "paper", text: "monthly file | portal", showarrow: false, font: { size: 10, color: C_TEXT } });
+  }
+  const extra = {};
+  extra.barmode = "stack";
+  extra.title = chartTitle(label(s.ko, s.en) + ": riders each year, thousands");
+  extra.shapes = shapes;
+  extra.annotations = notes;
+  extra.margin = { l: 60, r: 16, t: 60, b: 36 };
+  extra.legend = { orientation: "h", x: 1, xanchor: "right", y: 1.16, traceorder: "normal" };
+  Plotly.react("st-year", traces, baseLayout(extra), CONFIG);
+
+  const monthDiv = document.getElementById("st-month");
+  const note = document.getElementById("st-note");
+  if (s.monthly) {
+    monthDiv.style.display = "block";
+    const line = { type: "scatter", mode: "lines", name: "KTX", x: ST.months, y: s.monthly, line: { color: C_KTX, width: 1.6 }, hovertemplate: "%{x|%b %Y}: %{y:,.0f} thousand<extra>KTX</extra>" };
+    const extraM = {};
+    extraM.title = chartTitle("KTX riders each month, thousands");
+    extraM.showlegend = false;
+    extraM.shapes = eventShapes(ST.months[0], ST.months[ST.months.length - 1]);
+    extraM.margin = { l: 60, r: 16, t: 40, b: 36 };
+    Plotly.react("st-month", [line], baseLayout(extraM), CONFIG);
+    const seoul = s.ko === "서울" ? " Seoul's portal figures include Gangneung line KTX riders; the monthly file does not." : "";
+    note.textContent = "Bars before " + firstPortal + " are sums of the monthly file; from " + firstPortal + " they come from the statistics portal. Dotted lines in the monthly chart mark the events on the Timeline tab." + seoul;
+  } else {
+    monthDiv.style.display = "none";
+    Plotly.purge("st-month");
+    note.textContent = "No monthly figures for this station: the monthly file covers 50 stations to 2022. Bars come from the statistics portal.";
+  }
+}
+
+// ---------- events ----------
+function eventShapes(from, to) {
+  const shapes = [];
+  for (const e of TL.events) {
+    if (e.date >= from && e.date <= to) {
+      shapes.push(eventLine(e.date + "-01", 1));
+    }
+  }
+  return shapes;
+}
+
+// ---------- timeline ----------
+function drawTimeline() {
+  const yr = TL.yearly;
+  const hoverM = "%{x}: %{y:.1f} million<extra>%{fullData.name}</extra>";
+  const traces = [];
+  traces.push({ type: "bar", name: "KTX", x: yr.years, y: yr.ktx, marker: { color: C_KTX }, hovertemplate: hoverM });
+  traces.push({ type: "bar", name: "SRT", x: yr.years, y: yr.srt, marker: { color: C_SRT }, hovertemplate: hoverM });
+  const shapes = [];
+  const notes = [];
+  for (let i = 0; i < TL.events.length; i++) {
+    const e = TL.events[i];
+    const x = Number(e.date.slice(0, 4)) + (Number(e.date.slice(5, 7)) - 1) / 12 - 0.5;
+    const level = i % EVENT_LEVELS;
+    shapes.push(eventLine(x, 0.78 + level * 0.07));
+    if (!narrow()) {
+      notes.push({ x: x, y: 0.78 + level * 0.07, yref: "paper", yanchor: "bottom", text: e.label, showarrow: false, xanchor: "left", xshift: 2, font: { size: 10, color: C_TEXT }, bgcolor: C_PANEL });
+    }
+  }
+  const items = [];
+  for (const e of TL.events) {
+    items.push(e.date.slice(0, 4) + " " + e.label);
+  }
+  document.getElementById("tl-events").textContent = "Dotted lines: " + items.join("; ") + ".";
+  const extra = {};
+  extra.barmode = "stack";
+  extra.shapes = shapes;
+  extra.annotations = notes;
+  extra.margin = { l: 44, r: 12, t: 16, b: 36 };
+  extra.legend = { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", traceorder: "normal" };
+  extra.yaxis = { gridcolor: C_GRID, zeroline: false, title: { text: "millions", font: { size: 11 } }, range: [0, narrow() ? 130 : 175] };
+  extra.xaxis = { gridcolor: NONE, dtick: narrow() ? 4 : 2, range: [yr.years[0] - 0.6, yr.years[yr.years.length - 1] + 0.6] };
+  Plotly.react("tl-year", traces, baseLayout(extra), CONFIG);
+
+  const mo = TL.monthly;
+  const hoverMo = "%{x|%b %Y}: %{y:.2f} million<extra>%{fullData.name}</extra>";
+  const both = [];
+  for (let i = 0; i < mo.months.length; i++) {
+    both.push(mo.ktx[i] + mo.srt[i]);
+  }
+  const mTraces = [];
+  mTraces.push({ type: "scatter", mode: "lines", name: "KTX plus SRT", x: mo.months, y: both, line: { color: C_HEAD, width: 2.2 }, hovertemplate: hoverMo });
+  mTraces.push({ type: "scatter", mode: "lines", name: "KTX", x: mo.months, y: mo.ktx, line: { color: C_KTX, width: 1.5 }, hovertemplate: hoverMo });
+  mTraces.push({ type: "scatter", mode: "lines", name: "SRT", x: mo.months, y: mo.srt, line: { color: C_SRT, width: 1.5 }, hovertemplate: hoverMo });
+  const extraM = {};
+  extraM.shapes = eventShapes(mo.months[0], mo.months[mo.months.length - 1]);
+  extraM.legend = { orientation: "h", x: 0, y: 1.02, yanchor: "bottom" };
+  extraM.yaxis = { gridcolor: C_GRID, zeroline: false, rangemode: "tozero" };
+  extraM.margin = { l: 44, r: 12, t: 30, b: 36 };
+  Plotly.react("tl-month", mTraces, baseLayout(extraM), CONFIG);
+}
+
+// ---------- metro day ----------
+function hourLabels() {
+  const out = [];
+  for (const h of MD.hours) {
+    if (h === MD.hours[0]) {
+      out.push("<07");
+    } else if (h === MD.hours[MD.hours.length - 1]) {
+      out.push("24+");
+    } else {
+      out.push(String(h).padStart(2, "0"));
+    }
+  }
+  return out;
+}
+
+function drawLine(ko) {
+  const found = MD.lines.find((d) => d.ko === ko);
+  const ln = found || MD.network;
+  const x = hourLabels();
+  const hoverP = "%{x}: %{y:.1f}%<extra>%{fullData.name}</extra>";
+  const traces = [];
+  traces.push({ type: "scatter", mode: "lines", name: "all metro, boardings", x: x, y: MD.network.board, line: { color: C_GREY, width: 1.2, dash: "dash" }, hovertemplate: hoverP, showlegend: false });
+  traces.push({ type: "scatter", mode: "lines", name: "all metro, alightings", x: x, y: MD.network.alight, line: { color: C_GREY, width: 1.2, dash: "dot" }, hovertemplate: hoverP, showlegend: false });
+  traces.push({ type: "scatter", mode: "lines+markers", name: "boardings", x: x, y: ln.board, line: { color: C_METRO, width: 2.4 }, marker: { size: 6 }, hovertemplate: hoverP });
+  traces.push({ type: "scatter", mode: "lines+markers", name: "alightings", x: x, y: ln.alight, line: { color: C_SRT, width: 2.4 }, marker: { size: 6 }, hovertemplate: hoverP });
+  const extra = {};
+  const joiner = narrow() ? "<br>" : ": ";
+  extra.title = chartTitle(label(ln.ko, ln.en) + joiner + ln.boardings_m + " million boardings in " + MD.year);
+  extra.margin = narrow() ? { l: 40, r: 10, t: 60, b: 70 } : { l: 44, r: 12, t: 60, b: 36 };
+  extra.legend = narrow() ? { orientation: "h", x: 0, y: -0.2, yanchor: "top" } : { orientation: "h", x: 1, xanchor: "right", y: 1.16 };
+  extra.yaxis = { gridcolor: C_GRID, zeroline: false, ticksuffix: "%", rangemode: "tozero" };
+  extra.xaxis = { gridcolor: NONE, type: "category" };
+  Plotly.react("md-day", traces, baseLayout(extra), CONFIG);
+  document.getElementById("line").value = ln.ko;
+  drawRank(ln.ko);
+}
+
+function drawRank(selected) {
+  const rows = MD.lines.slice().reverse();
+  const trace = { type: "bar", orientation: "h", x: [], y: [], customdata: [], text: [], marker: { color: [] } };
+  for (const d of rows) {
+    trace.x.push(d.morning_peak);
+    trace.y.push(label(d.ko, d.en));
+    trace.customdata.push(d.ko);
+    trace.text.push(d.morning_peak.toFixed(1) + "%");
+    trace.marker.color.push(d.ko === selected ? C_METRO : C_BAR_DIM);
+  }
+  trace.textposition = "outside";
+  trace.textfont = { color: C_TEXT, size: 11 };
+  trace.cliponaxis = false;
+  trace.hovertemplate = "%{y}: %{x:.1f}% of boardings at 07 and 08<extra></extra>";
+  const net = MD.network.morning_peak;
+  const extra = {};
+  extra.showlegend = false;
+  extra.shapes = [eventLine(net, 1)];
+  extra.annotations = [{ x: net, y: 1.0, yref: "paper", yanchor: "bottom", text: "all metro " + net.toFixed(1) + "%", showarrow: false, font: { size: 10, color: C_TEXT } }];
+  extra.margin = { l: 10, r: 44, t: 24, b: 30 };
+  extra.xaxis = { gridcolor: C_GRID, zeroline: false, ticksuffix: "%", range: [0, 30] };
+  extra.yaxis = { automargin: true, gridcolor: NONE };
+  Plotly.react("md-rank", [trace], baseLayout(extra), CONFIG);
+}
+
+// ---------- start ----------
+function loadJson(name) {
+  return fetch(DATA_DIR + name).then((r) => r.json());
+}
+
+function addOption(select, value, text) {
+  const o = document.createElement("option");
+  o.value = value;
+  o.textContent = text;
+  select.appendChild(o);
+}
+
+function start(all) {
+  ST = all[0];
+  TL = all[1];
+  MD = all[2];
+
+  const sel = document.getElementById("station");
+  for (const s of ST.stations) {
+    addOption(sel, s.ko, label(s.ko, s.en));
+  }
+  sel.value = DEFAULT_STATION;
+  sel.addEventListener("change", () => drawStation(sel.value));
+  drawStation(DEFAULT_STATION);
+
+  drawTimeline();
+
+  const lsel = document.getElementById("line");
+  addOption(lsel, MD.network.ko, label(MD.network.ko, MD.network.en));
+  for (const d of MD.lines) {
+    addOption(lsel, d.ko, label(d.ko, d.en));
+  }
+  lsel.addEventListener("change", () => drawLine(lsel.value));
+  document.getElementById("md-sub").textContent = "Share of the day's gate taps in each hour, " + MD.year + ", all days together.";
+  drawLine(DEFAULT_LINE);
+  document.getElementById("md-rank").on("plotly_click", (ev) => drawLine(ev.points[0].customdata));
+  window.addEventListener("resize", onResize);
+}
+
+let resizeTimer = null;
+let wasNarrow = narrow();
+
+function onResize() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(redrawIfLayoutChanged, 250);
+}
+
+function redrawIfLayoutChanged() {
+  if (narrow() === wasNarrow) {
+    return;
+  }
+  wasNarrow = narrow();
+  drawStation(document.getElementById("station").value);
+  drawTimeline();
+  drawLine(document.getElementById("line").value);
+}
+
+function fail(err) {
+  let text = "Something went wrong while loading the page: " + err;
+  if (location.protocol === "file:") {
+    text = "This page was opened as a file, so it cannot read its data. Open it through a web server, for example python -m http.server in the docs folder.";
+  } else if (typeof Plotly === "undefined") {
+    text = "The chart library (Plotly) could not be loaded. Check the internet connection and reload.";
+  }
+  const p = document.createElement("p");
+  p.style.color = "#d95926";
+  p.textContent = text;
+  document.querySelector(".wrap").prepend(p);
+  console.error(err);
+}
+
+const FILES = ["stations.json", "timeline.json", "metro_day.json"];
+Promise.all(FILES.map(loadJson)).then(start).catch(fail);
+</script>
+</body>
+</html>

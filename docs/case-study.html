@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A rival that grew the market: twenty years of KTX in open data</title>
+<meta name="description" content="A case study of twenty years of Korean high-speed and metro rail in KORAIL open data: what a rival operator, new lines and the pandemic did to who rides where, with an interactive page and six Python notebooks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Fonts are stored next to this page (docs/fonts), both under the SIL Open Font License. Noto Sans KR (also SIL OFL) supplies the Hangul. */
+@font-face { font-family: "Archivo"; src: url("fonts/archivo-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Archivo"; src: url("fonts/archivo-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Source Serif 4"; src: url("fonts/source-serif-4-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Source Serif 4"; src: url("fonts/source-serif-4-latin-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Source Serif 4"; src: url("fonts/source-serif-4-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+
+:root {
+  --ink: #1d2433;        /* body text */
+  --muted: #5b6474;      /* captions and notes */
+  --track: #b9d1c4;      /* the railway track in the margin: pale green */
+  --head: #1f5c45;       /* headings: pine green */
+  --ktx: #1f63b0;        /* KTX, a deep version of the charts' blue */
+  --srt: #c4521f;        /* SRT, a deep version of the charts' orange */
+  --metro: #137a55;      /* metro rail, a deep version of the charts' aqua */
+  --paper: #ffffff;
+  --rule: #e2e8e4;
+  --sans: "Archivo", "Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", "Segoe UI", Helvetica, Arial, sans-serif;
+  --serif: "Source Serif 4", Georgia, "Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.65; }
+a { color: var(--head); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 3px solid var(--ktx); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------- Opening ---------- */
+.opening { max-width: 1080px; margin: 0 auto; padding: 56px 24px 24px; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 48px; align-items: start; }
+.opening h1 { font-family: var(--sans); font-weight: 700; font-size: 3.2rem; line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 20px; color: var(--head); }
+.standfirst { font-size: 1.25rem; line-height: 1.5; margin: 0 0 24px; max-width: 34em; }
+.byline { font-family: var(--sans); font-weight: 600; font-size: 0.95rem; color: var(--muted); margin: 0 0 16px; }
+.links { list-style: none; margin: 0; padding: 0; font-family: var(--sans); font-weight: 600; font-size: 0.95rem; }
+.links li { margin: 6px 0; }
+.lead { margin: 0; }
+.lead img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
+figcaption { font-size: 0.85rem; line-height: 1.45; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+/* ---------- The track: each section sits on a railway line, rails and sleepers ---------- */
+.line { max-width: 1080px; margin: 0 auto; padding: 8px 24px 64px; }
+.line-inner { position: relative; padding-left: 64px; max-width: 800px; margin-left: -64px; }   /* the track sits in the margin, so text lines up with the title */
+.line-inner::before { /* two rails with a sleeper every 14 px */
+  content: ""; position: absolute; left: 5px; top: 18px; bottom: 30px; width: 24px;
+  background:
+    linear-gradient(var(--track), var(--track)) 4px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--track), var(--track)) 18px 0 / 2px 100% no-repeat,
+    repeating-linear-gradient(to bottom, var(--track) 0 2px, transparent 2px 14px);
+}
+section { position: relative; margin-top: 48px; }
+h2 { font-family: var(--sans); font-weight: 700; font-size: 1.6rem; line-height: 1.2; color: var(--head); margin: 0 0 12px; }
+h2::before { /* each section is a wide dark sleeper */
+  content: ""; position: absolute; left: -64px; top: 10px; width: 34px; height: 10px; border-radius: 2px; background: var(--head);
+}
+h3 { font-family: var(--sans); font-weight: 600; font-size: 1.15rem; line-height: 1.3; margin: 32px 0 6px; position: relative; color: var(--ink); }
+h3::before { /* a short sleeper for each finding */
+  content: ""; position: absolute; left: -58px; top: 8px; width: 22px; height: 7px; border-radius: 2px; background: var(--head);
+}
+h3.ktx::before { background: var(--ktx); }
+h3.srt::before { background: var(--srt); }
+h3.metro::before { background: var(--metro); }
+p { margin: 0 0 14px; max-width: 40em; }
+.figure-line { font-family: var(--sans); margin: 4px 0 10px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.figure-line b { font-weight: 700; font-size: 2rem; line-height: 1; color: var(--head); }
+.figure-line.ktx b { color: var(--ktx); }
+.figure-line.srt b { color: var(--srt); }
+.figure-line.metro b { color: var(--metro); }
+.figure-line span { font-weight: 600; font-size: 0.95rem; color: var(--muted); }
+ul.plain { margin: 0 0 14px; padding-left: 1.1em; max-width: 40em; }
+ul.plain li { margin: 6px 0; }
+.wide { margin: 18px 0 8px; }
+.wide img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
+table { border-collapse: collapse; font-family: var(--sans); font-size: 0.92rem; margin: 8px 0 16px; }
+th, td { text-align: left; padding: 6px 18px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; padding-right: 0; padding-left: 18px; }
+td.num + td.num, th + th { padding-left: 18px; }
+td.num.ktx { color: var(--ktx); font-weight: 700; }
+td.num.srt { color: var(--srt); font-weight: 700; }
+.table-wrap { overflow-x: auto; max-width: 100%; }
+.terminus { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--muted); }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 900px) {
+  .opening { grid-template-columns: 1fr; gap: 28px; padding-top: 32px; }
+  .opening h1 { font-size: 2.4rem; }
+  .lead { max-width: 420px; }
+  .line-inner { margin-left: 0; }
+}
+@media (max-width: 560px) {
+  body { font-size: 17px; }
+  .opening, .line { padding-left: 16px; padding-right: 16px; }
+  .line-inner { padding-left: 36px; }
+  .line-inner::before { left: 2px; width: 18px; background:
+    linear-gradient(var(--track), var(--track)) 3px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--track), var(--track)) 13px 0 / 2px 100% no-repeat,
+    repeating-linear-gradient(to bottom, var(--track) 0 2px, transparent 2px 12px); }
+  h2::before { left: -37px; width: 24px; height: 8px; top: 9px; }
+  h3::before { left: -33px; width: 16px; height: 6px; top: 8px; }
+  table { font-size: 0.85rem; }
+  th, td { padding-right: 10px; }
+}
+
+/* ---------- PDF and printing ---------- */
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+@media print {
+  body { font-size: 9.5pt; line-height: 1.4; }
+  a { color: var(--ink); text-decoration: none; }
+  .opening { grid-template-columns: minmax(0, 1fr) 70mm; gap: 8mm; padding: 0 0 4mm; max-width: none; }
+  .opening h1 { font-size: 26pt; }
+  .standfirst { font-size: 12.5pt; }
+  .web-link { display: none; }
+  .line { padding: 0; max-width: none; }
+  .line-inner { max-width: none; margin-left: 0; }
+  section { margin-top: 4mm; }
+  p, ul.plain li { orphans: 3; widows: 3; }
+  h2 { font-size: 15pt; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin-top: 4mm; break-after: avoid; }
+  .figure-line b { font-size: 17pt; }
+  .wide { break-inside: avoid; }
+  .wide img { max-height: 62mm; width: auto; max-width: 100%; }
+  tr:first-child { break-after: avoid; }
+  table { break-inside: avoid; font-size: 8.4pt; margin: 1mm 0 3mm; }
+  table.list { break-inside: auto; }
+  tr { break-inside: avoid; }
+  .figure-line { break-inside: avoid; break-after: avoid; }
+  .table-wrap { overflow: visible; }   /* a scrolling box cannot be split across pages */
+  .wide.small img { max-height: 52mm; }
+  th, td { padding: 1mm 4mm 1mm 0; }
+  td.num, td.num + td.num, th + th { padding-left: 5mm; }
+  .terminus { margin-top: 4mm; padding-top: 2mm; font-size: 8.5pt; }
+  .links a[href^="http"]::after { content: " (" attr(href) ")"; font-weight: 400; color: var(--muted); }
+}
+</style>
+</head>
+<body>
+
+<header class="opening">
+  <div>
+    <h1>A rival that grew the market: twenty years of KTX in open data</h1>
+    <p class="standfirst">Korean high-speed rail carried 20 million passengers in 2004, its opening year (from April), and 117 million in 2024. On the way it gained a rival operator, new lines and a pandemic. An interactive page and six Python notebooks follow KORAIL's open data from 2004 to 2025. Did the rival split the market or grow it, did new lines create travel or move it, and has everything recovered from COVID?</p>
+    <p class="byline">Lik Ren Tai, November 2026</p>
+    <ul class="links">
+      <li><a href="https://likrentai.github.io/koreanrail/">Open the interactive page (also on phones)</a></li>
+      <li><a href="https://github.com/likrentai/koreanrail">Code, notebooks and data notes on GitHub</a></li>
+      <li class="web-link"><a href="case-study.pdf">Download this case study as a PDF</a></li>
+    </ul>
+  </div>
+  <figure class="lead">
+    <img src="images/cs_lead.jpg" width="1200" height="901" alt="The station explorer on the interactive page for 부산 (Busan): tiles show 20.4 million KTX and SRT riders in 2024, 13% more than in 2019, with SRT carrying 30% of them, and a bar chart of riders each year from 2004 to 2024 in which blue KTX bars are joined by orange SRT bars from 2017">
+    <figcaption>The station explorer for 부산 (Busan). From 2017 the orange SRT bars sit on top of a KTX bar that has shrunk, and the two together are taller than KTX alone ever was.</figcaption>
+  </figure>
+</header>
+
+<main class="line">
+<div class="line-inner">
+
+<section>
+  <h2>The question</h2>
+  <p>The KTX opened in April 2004 on the Seoul to Busan and Seoul to Mokpo corridors. Since then the network has added the Honam high-speed line (2015), the Gangneung line built for the PyeongChang Winter Olympics (2017) and, in December 2016, a second operator: SR runs the SRT from Suseo in south-east Seoul on the same high-speed tracks. Then COVID emptied the trains for two years.</p>
+  <p>Each of these is a question that transport economists and planners ask everywhere. When a <b>rival</b> enters, does it take passengers from the incumbent or bring new ones? When a <b>new line</b> opens, does it create travel or only move riders from slower trains? And after a shock, does demand <b>return to its old path</b>? I wanted to answer them with KORAIL's own open data, and to compare like with like: the same stations before and after, and a comparison group that the change did not touch.</p>
+</section>
+
+<section>
+  <h2>The data</h2>
+  <div class="table-wrap"><table class="list">
+    <tr><th>What</th><th>Source</th><th>Period</th></tr>
+    <tr><td>KTX boardings plus alightings by station, monthly (50 stations)</td><td>KORAIL, Public Data Portal (data.go.kr)</td><td>Apr 2004 to Dec 2022</td></tr>
+    <tr><td>KTX and SRT boardings and alightings by station and direction, yearly</td><td>Korean Railway Statistics (railstat.korail.com)</td><td>2004 to 2024</td></tr>
+    <tr><td>Riders by train type, monthly; riders by line and train type, yearly</td><td>Korean Railway Statistics</td><td>2016 to 2023; 2004 to 2024</td></tr>
+    <tr><td>Scheduled train runs and train km</td><td>Korean Railway Statistics</td><td>2016 to 2024</td></tr>
+    <tr><td>Railway accidents and service disruptions, monthly</td><td>Korean Railway Statistics</td><td>2016 to 2024</td></tr>
+    <tr><td>Metro rail (광역철도) boardings by station, monthly, and gate taps by hour</td><td>KORAIL metro rail statistics (info.korail.com)</td><td>2019, 2024, 2025</td></tr>
+  </table></div>
+  <p>Sixteen files in all, cleaned and checked in six notebooks: station totals add up to each table's own subtotals, monthly rows to yearly rows, and KORAIL's yearly totals match its published figures exactly (136.7 million riders in 2023, 144.8 million in 2024). Two numbers are not measurements: the <b>pre-COVID path</b> is a model fitted to 2017 to 2019, and the unit of the <b>train km</b> table (per day) is inferred, because the export does not state it. Station names are given in Hangul with English in brackets.</p>
+</section>
+
+<section>
+  <h2>One page, six notebooks</h2>
+  <div class="table-wrap"><table class="list">
+    <tr><th>Part</th><th>What it answers</th></tr>
+    <tr><td>Stations tab</td><td>How many KTX and SRT riders use a station, how that changed each year and month, and what share SRT has. All 88 stations, Hangul with English names.</td></tr>
+    <tr><td>Timeline tab</td><td>Twenty years of high-speed riders with the events that shaped them, and the month-by-month story of SRT's arrival and COVID.</td></tr>
+    <tr><td>Metro day tab</td><td>When metro rail riders travel, line by line, and which lines are most commuter-heavy.</td></tr>
+    <tr><td>Notebooks (Python)</td><td>00 to 02 load and check the sixteen files; 03 explores five candidate findings; 04 makes the charts below; 05 writes the data for the page.</td></tr>
+  </table></div>
+  <figure class="wide small">
+    <img src="images/cs_pages.jpg" width="2000" height="743" alt="Left: the Timeline tab with yearly bars of KTX and SRT boardings from 2004 to 2024 and dotted lines for seven events, from the KTX opening in 2004 to the end of distancing rules in 2022. Right: the Metro day tab for 중앙선 (Jungang Line), with boardings peaking at 07 and alightings at 18, against dashed grey lines for all metro rail">
+    <figcaption>Left: the Timeline tab, with the events that shaped high-speed rail. Right: the Metro day tab for 중앙선 (Jungang Line), the most commuter-heavy line, against all metro rail.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>What the data shows</h2>
+
+  <h3 class="srt">SRT took riders from KTX, but the market grew</h3>
+  <div class="figure-line srt"><b>+36%</b><span>KTX plus SRT riders at the 14 stations SRT served in 2019, against KTX alone in 2016 (KTX by itself: -3%)</span></div>
+  <p>At the stations the two operators share, KTX lost riders after SRT arrived: 부산 (Busan) by 18% between 2016 and 2019, 동대구 (Dongdaegu) by 5%. But the two together carried far more than KTX had alone: 24% more at Busan, 34% more at Dongdaegu, 36% more across all 14 shared stations. KTX stations that SRT does not serve grew by 12% over the same years, so the growth at shared stations was three times the background. Nationally, KTX fell from 64.6 to 59.8 million riders in 2017, SRT's first full year, while high-speed rail as a whole rose from 65.6 to 79.3 million. The data cannot say why, but a likely part of the answer is access: Suseo put a high-speed terminal in south-east Seoul, far from Seoul station and Yongsan. 울산 (Ulsan) is the exception, 10% down.</p>
+  <figure class="wide">
+    <img src="images/cs_f1_srt.png" width="1615" height="1005" alt="Horizontal bars for the ten busiest stations shared by KTX and SRT in 2019, each made of a blue KTX part and an orange SRT part, with a dark tick at the KTX level of 2016. At Busan the blue part ends at 12.0 million, left of the tick at 14.5 million, but the whole bar reaches 18.1 million, +24%. Labels: Dongdaegu +34%, Daejeon +25%, Cheonan Asan +37%, Ulsan -10%, Osong +76%, Gwangju Songjeong +62%, Iksan +80%, Gimcheon Gumi +44%, Gyeongju +111%">
+    <figcaption>Riders in 2019 at the ten busiest shared stations, KTX and SRT, against KTX's own level in 2016 (the dark tick). Percentages compare the whole bar with the tick.</figcaption>
+  </figure>
+
+  <h3 class="ktx">New lines created rail travel rather than moving it</h3>
+  <div class="figure-line ktx"><b>2.6 million</b><span>riders on the Gangneung line in 2019, while the old lines to the east coast lost 0.2 million</span></div>
+  <p>Before the Gangneung KTX opened in December 2017, rail to Gangneung meant slow Mugunghwa and Saemaul trains on the 영동선 (Yeongdong) and 태백선 (Taebaek) lines. If the KTX had only moved those riders, the old lines would have lost about as many as the new line gained. They lost 0.18 million between 2016 and 2019 (1.19 to 1.01 million), against 2.57 million on the new line: almost all of it was new to rail, whether from roads or new trips. The Honam high-speed line tells the same story. In the twelve months after it opened on 2 April 2015, KTX riders at the eight Honam stations rose by 47%, against 3% at the other 32 KTX stations over the same months.</p>
+  <figure class="wide">
+    <img src="images/cs_f2_newlines.png" width="1618" height="828" alt="Left: a line chart of riders from 2010 to 2024; the Gangneung line KTX starts at 2.5 million in 2018, dips to 1.6 million in 2020 and reaches 2.7 million in 2024, while the old Yeongdong and Taebaek lines drift from about 1.4 million to 1.0 million before 2019. Right: two bars, +47% for the eight Honam stations and +3% for 32 other KTX stations">
+    <figcaption>Left: the Gangneung line and the old lines it could have drawn from. Right: KTX riders in the first year of the Honam high-speed line against the year before, at the Honam stations and at all other KTX stations.</figcaption>
+  </figure>
+
+  <h3 class="metro">High-speed rail is above 2019; metro rail is not</h3>
+  <div class="figure-line metro"><b>+24% and -4%</b><span>high-speed riders in 2024 against 2019 (116.6 against 94.2 million), and metro rail riders in 2025 against 2019</span></div>
+  <p>COVID cut high-speed riders by more than a third in 2020, and by about two thirds in the worst month. Against the path the market was on before 2020, an estimated 81 to 105 million trips were lost between 2020 and 2022. Riders passed the 2019 level in 2023 (+16%), but whether they are back on the old path depends on how the trend is drawn: a straight trend puts 2024 13% below it, a levelling-off trend 9% above it, so the chart shows a range rather than one line. Metro rail is a different story: 782.8 million boardings in 2025, 3.9% below 2019. The old commuter lines lag (경인선 Gyeongin -20%, 중앙선 Jungang -14%, 경부선 Gyeongbu -9%), and all the growth is on lines extended or linked since 2019 (동해선 Donghae +57%, 수인선 Suin +34%). Long-distance travel has come back faster than the daily commute.</p>
+  <figure class="wide">
+    <img src="images/cs_f3_recovery.png" width="1614" height="828" alt="A line chart of KTX plus SRT boardings each month from 2017 to 2023, rising from about 6.5 to 8.5 million, falling to 2.6 million in March 2020, recovering unevenly and reaching about 9.9 million by the end of 2023, inside or just below a shaded orange band for the pre-COVID path; a dashed grey line marks the 2019 monthly average of 7.9 million">
+    <figcaption>KTX plus SRT riders each month against the pre-COVID path, drawn as the range between a straight and a levelling-off trend.</figcaption>
+  </figure>
+  <figure class="wide">
+    <img src="images/cs_f3_metro.png" width="1614" height="1084" alt="Horizontal bars for 15 metro rail lines, change in boardings from 2019 to 2025: Donghae +57%, Suin +34%, Gyeonggang +19% and Janghang +18% in aqua; Gyeongui 0%, Ilsan -1%, Gyeongchun -3%, Bundang -5%, Gwacheon -8%, Gyeongbu -9%, Gyeongwon -10%, Ansan -11%, ITX-Cheongchun -13%, Jungang -14% and Gyeongin -20% in grey">
+    <figcaption>Metro rail boardings by line, 2019 to 2025, for lines open in both years.</figcaption>
+  </figure>
+
+  <h3>Service disruptions per train km fell by about two thirds</h3>
+  <div class="figure-line"><b>-65%</b><span>service disruptions per million train km, 2022 to 2024 against 2016 to 2019</span></div>
+  <p>No punctuality figures are published, so the closest open measure of reliability is KORAIL's count of service disruptions (운행장애): events that stop or delay trains without an accident, such as vehicle, signal or power faults. They peaked at 295 in 2019, 169 of them vehicle faults, and have stayed at 75 to 76 a year since 2022, while train km rose. Per million train km the rate fell from 1.90 in 2019 to 0.45 in 2024. The data does not say why, and railway accidents (collisions, derailments, level crossings) show no such fall: between 9 and 28 a year.</p>
+  <figure class="wide">
+    <img src="images/cs_f4_reliability.png" width="1614" height="769" alt="Bars of service disruptions per million train km from 2016 to 2024: 1.34, 1.21, 0.82, 1.90, 0.91, 0.58, then 0.49, 0.46 and 0.45 in pine green for 2022 to 2024; labels give the number of disruptions: 205, 179, 132, 295, 146, 89, 76, 75, 76">
+    <figcaption>Service disruptions per million train km; the labels give the number of disruptions in each year.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Problems in the data, and how they were handled</h2>
+  <ul class="plain">
+    <li><b>Two station series that do not quite meet.</b> The monthly file covers 50 KTX stations to 2022, shows stations under 500 riders a month as 0, and rounds to thousands; the yearly portal table covers every station to 2024. Where they overlap, stations agree within 1%, with two exceptions: Seoul (below) and 행신 (Haengsin) in 2022 (1.4%). The monthly file is used to 2022 and the portal table after it.</li>
+    <li><b>Seoul counted two ways.</b> From 2018 the portal's figure for 서울 (Seoul) is 7% to 10% higher than the monthly file, because it includes Gangneung line KTX riders and the monthly file does not. Both are shown, with a note.</li>
+    <li><b>Renamed stations.</b> 신경주 became 경주 (Gyeongju), 신포항 became 포항 (Pohang), and the airport station changed name twice. Old names are mapped to today's names before any comparison.</li>
+    <li><b>An incomplete year.</b> The portal's 2004 to 2015 station table is incomplete for 2015 (Busan 8.5 against 14.5 million), probably because line codes changed when the Honam line opened. It is used only as a check, for 2004 to 2014.</li>
+    <li><b>Small mismatches between tables.</b> SRT in the monthly table is 1% to 3% higher than in the station table for 2017 to 2019; the 2016 network total differs by 2.1 million between two tables. Each comparison uses one table throughout.</li>
+    <li><b>Undocumented units and labels.</b> The train runs table does not state its unit; it behaves like trains and train km per day. The hourly metro sheets do not say whether "08시" means the hour starting or ending at 8; the start of the hour fits the data. One sheet is titled "1900년 1월" by mistake; months are taken from the sheet tabs.</li>
+    <li><b>Messy exports.</b> Some portal CSVs end without a closing quote, workbooks are laid out for printing, and similar-looking tables are easy to mix up (the first download was the all-trains table, not KTX). Every file is checked against its own subtotals.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Limits</h2>
+  <p>These are before-and-after comparisons with comparison groups, not controlled experiments: other things changed at the same time, such as fares, timetables, roads and the economy, and the data has no origin-to-destination trips, so it cannot show where new riders came from. The pre-COVID path rests on three years of data and is shown as a range for that reason. Station counts are boardings plus alightings, not people. The metro hours mix weekdays and weekends. Revenue, fares and the operators' costs are outside this project, and nothing here has been through peer review.</p>
+</section>
+
+<section>
+  <h2>Where this could be useful</h2>
+  <ul class="plain">
+    <li><b>Rail operators and regulators:</b> evidence on what a second operator did to the market, station by station, rather than only nationally.</li>
+    <li><b>Transport planners:</b> a simple test of whether a new line creates travel, with a comparison group, for business cases and reviews after opening.</li>
+    <li><b>Analytics and consulting teams:</b> a worked example of turning messy official exports into checked tables, findings with honest ranges, and a page that non-specialists can explore.</li>
+  </ul>
+  <p>The same approach transfers to any network that publishes station counts, such as the Klang Valley rail data in the first project of this series, and to new lines anywhere, by comparing their stations with the rest of the network before and after opening.</p>
+</section>
+
+<section>
+  <h2>About</h2>
+  <p>Lik Ren Tai applies data science in two fields: environmental science and railway systems. This project was built with Python (pandas, openpyxl, statsmodels, matplotlib) and Plotly.</p>
+  <p class="terminus">Data: Korea Railroad Corporation (KORAIL), through the Public Data Portal (data.go.kr), the Korean Railway Statistics portal (railstat.korail.com) and KORAIL's metro rail statistics (info.korail.com); SRT figures as published in the Korean Railway Statistics. Fonts: Archivo, Source Serif 4 and Noto Sans KR, SIL Open Font License. This is an independent project, not affiliated with or endorsed by KORAIL, SR or any of the sources.</p>
+</section>
+
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,122 @@
+kind,ko,en
+station,가남,Ganam
+station,감곡장호원,Gamgok Janghowon
+station,강릉,Gangneung
+station,검암,Geomam
+station,경산,Gyeongsan
+station,경주,Gyeongju
+station,계룡,Gyeryong
+station,곡성,Gokseong
+station,공주,Gongju
+station,광명,Gwangmyeong
+station,광주,Gwangju
+station,광주송정,Gwangju Songjeong
+station,구례구,Guryegu
+station,구미,Gumi
+station,구포,Gupo
+station,김제,Gimje
+station,김천,Gimcheon
+station,김천구미,Gimcheon Gumi
+station,나주,Naju
+station,남원,Namwon
+station,논산,Nonsan
+station,단양,Danyang
+station,대전,Daejeon
+station,덕소,Deokso
+station,동대구,Dongdaegu
+station,동탄,Dongtan
+station,동해,Donghae
+station,둔내,Dunnae
+station,마산,Masan
+station,만종,Manjong
+station,목포,Mokpo
+station,묵호,Mukho
+station,문경,Mungyeong
+station,물금,Mulgeum
+station,밀양,Miryang
+station,부발,Bubal
+station,부산,Busan
+station,부전,Bujeon
+station,살미,Salmi
+station,상봉,Sangbong
+station,서대구,Seodaegu
+station,서대전,Seodaejeon
+station,서울,Seoul
+station,서원주,Seowonju
+station,수서,Suseo
+station,수안보온천,Suanbo Oncheon
+station,수원,Suwon
+station,순천,Suncheon
+station,안동,Andong
+station,앙성온천,Angseong Oncheon
+station,양평,Yangpyeong
+station,여수엑수포,Yeosu Expo
+station,여수엑스포,Yeosu Expo
+station,여천,Yeocheon
+station,연풍,Yeonpung
+station,영등포,Yeongdeungpo
+station,영주,Yeongju
+station,영천,Yeongcheon
+station,오송,Osong
+station,용산,Yongsan
+station,울산,Ulsan
+station,원주,Wonju
+station,의성,Uiseong
+station,익산,Iksan
+station,인천공항T1,Incheon Airport T1
+station,인천공항T2,Incheon Airport T2
+station,장성,Jangseong
+station,전주,Jeonju
+station,정동진,Jeongdongjin
+station,정읍,Jeongeup
+station,제천,Jecheon
+station,진부,Jinbu
+station,진영,Jinyeong
+station,진주,Jinju
+station,창원,Changwon
+station,창원중앙,Changwon Jungang
+station,천안아산,Cheonan Asan
+station,청량리,Cheongnyangni
+station,충주,Chungju
+station,태화강,Taehwagang
+station,판교(경기),Pangyo
+station,평창,Pyeongchang
+station,평택지제,Pyeongtaek Jije
+station,포항,Pohang
+station,풍기,Punggi
+station,함안,Haman
+station,함평,Hampyeong
+station,행신,Haengsin
+station,횡성,Hoengseong
+line,합계,Network total
+line,경부고속선,Gyeongbu HSR
+line,호남고속선,Honam HSR
+line,수서고속선,Suseo HSR
+line,경부선,Gyeongbu Line
+line,호남선,Honam Line
+line,전라선,Jeolla Line
+line,경전선,Gyeongjeon Line
+line,동해선,Donghae Line
+line,중앙선,Jungang Line
+line,강릉선,Gangneung Line
+line,영동선,Yeongdong Line
+line,태백선,Taebaek Line
+line,충북선,Chungbuk Line
+line,장항선,Janghang Line
+line,경북선,Gyeongbuk Line
+line,중부내륙선,Jungbu Naeryuk Line
+line,서해선,Seohae Line
+line,경원선,Gyeongwon Line
+line,경의선,Gyeongui Line
+line,경인선,Gyeongin Line
+line,경춘선,Gyeongchun Line
+line,경강선,Gyeonggang Line
+line,수인선,Suin Line
+line,안산선,Ansan Line
+line,과천선,Gwacheon Line
+line,분당선,Bundang Line
+line,일산선,Ilsan Line
+line,대경선,Daegyeong Line
+line,ITX-청춘,ITX-Cheongchun
+line,광역전철 합계,Metro total
+line,광역철도 합계,Metro rail total
