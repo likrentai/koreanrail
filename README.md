@@ -1,4 +1,4 @@
-# A rival that grew the market: twenty years of KTX in open data
+# A rival that grew the market: twenty years of KTX before the merger
 
 **Live page:** https://likrentai.github.io/koreanrail/
 
@@ -6,7 +6,7 @@
 
 **Case study (PDF):** https://likrentai.github.io/koreanrail/case-study.pdf
 
-Korean high-speed rail carried 20 million passengers in 2004, its opening year, and 117 million in 2024. On the way it gained a rival operator (SR's SRT, from December 2016), new lines and a pandemic. This project follows Korea Railroad Corporation (KORAIL) open data from 2004 to 2025 to ask three questions: did the rival split the market or grow it, did new lines create travel or move it, and has everything recovered from COVID?
+Korean high-speed rail carried 20 million passengers in 2004, its opening year, and 117 million in 2024. On the way it gained a rival operator (SR's SRT, from December 2016), new lines and a pandemic. This project follows Korea Railroad Corporation (KORAIL) open data from 2004 to 2025 to ask three questions: did the rival split the market or grow it, did new lines create travel or move it, and has everything recovered from COVID? KORAIL took over SR in September 2026, so these are the years before the merger.
 
 ## What it shows
 
